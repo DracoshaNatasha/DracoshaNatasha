@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+<link href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" rel="stylesheet"/>
+<div id="osm-map"></div>
+<h1 id="hhh"></h1>
+<script>
+    // Where you want to render the map.
+    var element = document.getElementById('osm-map');
+
+    // Height has to be set. You can do this in CSS too.
+    element.style = 'height:300px;';
+
+    // Create Leaflet map on map element.
+    var map = L.map(element);
+
+    // Add OSM tile layer to the Leaflet map.
+    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+
+    fetch("./data.csv")
+        .then((response) => {
+            response.text().then(txt => {
+                let rows = txt.split('\n')
+                for(let i = 0; i<rows.length; i++)
+                {
+                    let values = rows[i].split(';');
+                    document.getElementById('hhh').innerText = i;
+                    var t = L.latLng(values[2], values[3]);
+                    L.marker(t).addTo(map);
+                }
+            });
+        })
+    var target = L.latLng('54.719471', '55.994720');
+    map.setView(target, 14);
+</script>
+</body>
+</html>
