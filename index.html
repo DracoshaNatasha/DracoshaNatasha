@@ -27,7 +27,17 @@
                     zoom: mapDefaultZoom
                 })
             });
-            add_map_point(54.719471, 55.994720, 'https://sun3-12.userapi.com/s/v1/if1/_8sXjGT3t0p2TpdznhwSpNqjaEfhZPFQgmKY0YRxnuS9XJsA6bd6O9C5PbjhsC_CE_dO5x-4.jpg?size=50x50&quality=96&crop=514,119,337,337&ava=1', '')
+            fetch("./data.csv")
+                .then((response) => {
+                    response.text().then(txt => {
+                        let rows = txt.split('\n')
+                        for(let i = 0; i<rows.length; i++)
+                        {
+                            let values = rows[i].split(';');
+                            add_map_point(values[2], values[3], values[1], values[0])
+                        }
+                    });
+                })
         }
 
         function add_map_point(lat, lng, url, name) {
