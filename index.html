@@ -12,7 +12,8 @@
         var mapLng = 55.994720;
         var mapDefaultZoom = 4;
 
-        function initialize_map() {
+        function initialize_map(filter) {
+            document.getElementById("map").innerText = "";
             map = new ol.Map({
                 target: "map",
                 layers: [
@@ -31,10 +32,11 @@
                 .then((response) => {
                     response.text().then(txt => {
                         let rows = txt.split('\n')
-                        for(let i = 0; i<rows.length; i++)
-                        {
+                        for (let i = 0; i < rows.length; i++) {
                             let values = rows[i].split(';');
-                            add_map_point(values[2], values[3], values[1], values[0])
+                            if (values[0].toLowerCase().includes(filter.toLowerCase()) || filter === '') {
+                                add_map_point(values[2], values[3], values[1], values[0])
+                            }
                         }
                     });
                 })
@@ -42,7 +44,7 @@
 
         function add_map_point(lat, lng, url, name) {
             var vectorLayer = new ol.layer.Vector({
-                source:new ol.source.Vector({
+                source: new ol.source.Vector({
                     features: [new ol.Feature({
                         geometry: new ol.geom.Point(ol.proj.transform([parseFloat(lng), parseFloat(lat)], 'EPSG:4326', 'EPSG:3857')),
                     })]
@@ -74,7 +76,12 @@
         }
     </script>
 </head>
-<body onload="initialize_map();">
-<div id="map" style="width: 100vw; height: 100vh;"></div>
+<body onload="initialize_map('');" style="margin: 0;">
+<div style="display: flex">
+    Поиск:
+    <input type="text" id="filter">
+    <input type="submit" onclick="initialize_map(document.getElementById('filter').value)">
+</div>
+<div id="map" style="width: 100vw; height: 90vh; margin: 0"></div>
 </body>
 </html>
