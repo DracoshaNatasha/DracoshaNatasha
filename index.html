@@ -77,11 +77,11 @@
     </script>
 </head>
 <body onload="initialize_map('');" style="margin: 0;">
-<div style="display: flex">
+<div style="display: flex; height: 20px">
     Поиск:
     <input type="text" id="filter">
     <input type="submit" onclick="initialize_map(document.getElementById('filter').value)">
 </div>
-<div id="map" style="width: 100vw; height: 90vh; margin: 0"></div>
+<div id="map" style="width: 100vw; height: calc(100vh - 20px); margin: 0"></div>
 </body>
 </html>
