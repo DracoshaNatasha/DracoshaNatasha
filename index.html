@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>
+
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css" type="text/css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
 
     <script>
         /* OSM & OL example code provided by https://mediarealm.com.au/ */
@@ -18,9 +22,7 @@
                 target: "map",
                 layers: [
                     new ol.layer.Tile({
-                        source: new ol.source.OSM({
-                            url: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        })
+                        source: new ol.source.OSM()
                     })
                 ],
                 view: new ol.View({
@@ -28,6 +30,7 @@
                     zoom: mapDefaultZoom
                 })
             });
+            let people = [];
             fetch("./data.csv")
                 .then((response) => {
                     response.text().then(txt => {
@@ -35,18 +38,67 @@
                         for (let i = 0; i < rows.length; i++) {
                             let values = rows[i].split(';');
                             if (values[0].toLowerCase().includes(filter.toLowerCase()) || filter === '') {
-                                add_map_point(values[2], values[3], values[1], values[0])
+                                people.push([values[2], values[3], values[1], values[0]])
                             }
                         }
+
+                        add_map_layers(people)
+
                     });
                 })
         }
 
+        // https://openlayers.org/en/latest/examples/feature-move-animation.html?q=line
+        let distance = 0;
+        let lastTime;
+
+        function moveFeature(event) {
+            const speed = 20;
+            const time = event.frameState.time;
+            const elapsedTime = time - lastTime;
+            distance = (distance + (speed * elapsedTime) / 1e6) % 2;
+            lastTime = time;
+
+            const currentCoordinate = route.getCoordinateAt(
+                distance > 1 ? 2 - distance : distance
+            );
+            position.setCoordinates(currentCoordinate);
+            const vectorContext = getVectorContext(event);
+            vectorContext.setStyle(styles.geoMarker);
+            vectorContext.drawGeometry(position);
+
+            map.render();
+        }
+
+        function startAnimation() {
+            lastTime = Date.now();
+            vectorLayer.on('postrender', moveFeature);
+            // hide geoMarker and trigger map render through change event
+            geoMarker.setGeometry(null);
+        }
+        // https://openlayers.org/en/latest/examples/feature-move-animation.html?q=line
+
+
+        function add_map_layers(people) {
+            for (let i = 0; i < people.length; i++) {
+                const p = people[i];
+                add_map_point(p[0], p[1], p[2], p[3]);
+
+            }
+        }
+
+
+        markersCoords = []
         function add_map_point(lat, lng, url, name) {
+            lng = parseFloat(lng)
+            lat = parseFloat(lat)
+            if(markersCoords.includes(''+lng+lat))
+                lng += 0.005
+            markersCoords.push(''+lng+lat)
             var vectorLayer = new ol.layer.Vector({
                 source: new ol.source.Vector({
                     features: [new ol.Feature({
-                        geometry: new ol.geom.Point(ol.proj.transform([parseFloat(lng), parseFloat(lat)], 'EPSG:4326', 'EPSG:3857')),
+                        geometry: new ol.geom.Point(ol.proj.transform([lng, lat], 'EPSG:4326', 'EPSG:3857')),
                     })]
                 }),
                 style: new ol.style.Style({
@@ -74,14 +126,42 @@
 
             map.addLayer(vectorLayer);
         }
+
+        function add_map_line(lat, lng, lat2, lng2) {
+            const lonlat0 = [lng, lat];
+            const lonlat1 = [lng2, lat2];
+            var points = [ol.proj.fromLonLat(lonlat0), ol.proj.fromLonLat(lonlat1)];
+
+            var vectorLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    features: [new ol.Feature({
+                        geometry: new ol.geom.LineString(points)
+                    })],
+                    wrapX: false
+                }),
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: "red",
+                        width: 5,
+                        //lineDash: [4, 4, 4],
+                        lineCap: "butt"
+                        /* https://openlayers.org/en/latest/apidoc/module-ol_style_Stroke.html */
+                    })
+                })
+            });
+
+            map.addLayer(vectorLayer);
+        }
     </script>
 </head>
+
 <body onload="initialize_map('');" style="margin: 0;">
-<div style="display: flex; height: 20px">
-    Поиск:
-    <input type="text" id="filter">
-    <input type="submit" onclick="initialize_map(document.getElementById('filter').value)">
-</div>
-<div id="map" style="width: 100vw; height: calc(100vh - 20px); margin: 0"></div>
+    <div style="display: flex; height: 20px">
+        Поиск:
+        <input type="text" id="filter">
+        <input type="submit" onclick="initialize_map(document.getElementById('filter').value)">
+    </div>
+    <div id="map" style="width: 100vw; height: calc(100vh - 20px); margin: 0"></div>
 </body>
+
 </html>
